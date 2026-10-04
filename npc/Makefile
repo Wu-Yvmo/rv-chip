@@ -1,20 +1,23 @@
 all build sim:
 
 verilator:
-	verilator --cc --exe -Wall --trace vsrc/top.v csrc/main.cpp
+	verilator --cc --exe -Wall --trace -CFLAGS "-std=c++20" vsrc/top.v csrc/main.cpp
 
 build: verilator
 	make -C obj_dir -f Vtop.mk Vtop.out
 
-sim:
+sim: build
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	@echo "Write this Makefile by your self."
+	./obj_dir/Vtop.out
 
 gen-lint:
 	bear -- make build
 
 clean:
 	rm -rf obj_dir 
+
+NEMU_HOME := /home/wuyvmo/ysyx-workbench/npc
 
 include ../Makefile
 
