@@ -6,6 +6,8 @@ STUNAME = 张三
 TRACER = tracer-ysyx
 GITFLAGS = -q --author='$(TRACER) <tracer@ysyx.org>' --no-verify --allow-empty
 
+NEMU_HOME := $(shell pwd)
+
 YSYX_HOME     = $(NEMU_HOME)/..
 WORK_BRANCH   = $(shell git symbolic-ref -q --short HEAD 2>/dev/null)
 WORK_HEAD     = $(shell git rev-parse --verify HEAD 2>/dev/null)
