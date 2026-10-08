@@ -1,26 +1,40 @@
+include $(NVBOARD_HOME)/scripts/nvboard.mk
+
+VSRC = ./vsrc/defines.v ./vsrc/alu.v ./vsrc/control.v \
+	./vsrc/immgen.v ./vsrc/regfile.v ./vsrc/top.v
+
+CPPSRC = ./csrc/emu.cpp ./csrc/pmem.cpp ./csrc/main.cpp
+CPPSRC_NVBOARD = build/auto_bind.cpp ./csrc/emu.cpp ./csrc/main.cpp
+
 all build sim:
 
 verilator:
-	verilator --cc --exe -Wall --trace -CFLAGS "-std=c++20" vsrc/top.v csrc/main.cpp
+	verilator --cc --exe -Wall -Wno-fatal --trace --top-module top \
+		-I./vsrc \
+		-CFLAGS "-std=c++20" \
+		$(VSRC) $(CPPSRC)
+
+# 带nvboard
+verilator-nvboard:
+	verilator --cc --exe -Wall -Wno-fatal --trace \
+		-CFLAGS "-std=c++20 -I$(NVBOARD_USR_INC) $(shell sdl2-config --cflags)" \
+ 		-LDFLAGS "$(NVBOARD_ARCHIVE) -lSDL2 -lSDL2_image -lSDL2_ttf" \
+		-I./vsrc \
+		$(VSRC) $(CPPSRC)
 
 build: verilator
 	make -C obj_dir -f Vtop.mk Vtop.out
 
 sim: build
-	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	@echo "Write this Makefile by your self."
 	./obj_dir/Vtop.out
+
+clean:
+	rm -rf obj_dir
 
 gen-lint:
 	bear -- make build
 
-clean:
-	rm -rf obj_dir 
-
-NEMU_HOME := /home/wuyvmo/ysyx-workbench/npc
-
 include ../Makefile
-
 # 下面是我们的参考
 # all: run
 

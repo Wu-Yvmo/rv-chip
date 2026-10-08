@@ -14,17 +14,33 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop___024root final : public VerilatedModule
   public:
 
     // DESIGN SPECIFIC STATE
-    VL_IN8(a,0,0);
-    VL_IN8(b,0,0);
-    VL_OUT8(f,0,0);
+    VL_IN8(clk,0,0);
+    VL_IN8(rst,0,0);
+    VL_IN8(__pinNumber3,0,0);
+    CData/*0:0*/ top__DOT__reg_wen;
+    CData/*2:0*/ top__DOT__imm_ext_type;
+    CData/*2:0*/ top__DOT__memr_mask;
+    CData/*1:0*/ top__DOT__wb_type;
     CData/*0:0*/ __VstlFirstIteration;
-    CData/*0:0*/ __VicoFirstIteration;
+    CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
     CData/*0:0*/ __VactContinue;
+    IData/*31:0*/ top__DOT__pc;
+    IData/*31:0*/ top__DOT__next_pc;
+    IData/*31:0*/ top__DOT__instruction;
+    IData/*31:0*/ top__DOT__imm;
+    IData/*31:0*/ top__DOT__alu_out;
+    IData/*31:0*/ top__DOT__mem_rdata;
+    IData/*31:0*/ top__DOT__tmp;
+    IData/*31:0*/ top__DOT__regfile__DOT__i;
+    IData/*31:0*/ __Vfunc_top__DOT__pmem_read__0__Vfuncout;
+    IData/*31:0*/ __Vfunc_top__DOT__pmem_read__1__Vfuncout;
+    IData/*31:0*/ __Vfunc_top__DOT__pmem_read__2__Vfuncout;
     IData/*31:0*/ __VactIterCount;
+    VlUnpacked<IData/*31:0*/, 32> top__DOT__regfile__DOT__storage;
+    VlUnpacked<CData/*0:0*/, 2> __Vm_traceActivity;
     VlTriggerVec<1> __VstlTriggered;
-    VlTriggerVec<1> __VicoTriggered;
-    VlTriggerVec<0> __VactTriggered;
-    VlTriggerVec<0> __VnbaTriggered;
+    VlTriggerVec<1> __VactTriggered;
+    VlTriggerVec<1> __VnbaTriggered;
 
     // INTERNAL VARIABLES
     Vtop__Syms* const vlSymsp;
