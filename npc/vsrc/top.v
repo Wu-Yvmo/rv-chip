@@ -15,17 +15,27 @@ module top(
 
     // IF阶段 取指令
     reg [31:0] pc = 0, next_pc = 0;
+    wire inner_meet_ebreak;
     always @(posedge clk) begin // pc的更新
         if (rst) pc <= 0;
         // pc只在没遇到ebreak时才更新
-        else if (~meet_ebreak) pc <= next_pc;
+        else if (~inner_meet_ebreak) pc <= next_pc;
         else pc <= pc;
     end
 
     wire [31:0] instruction;
     assign instruction = pmem_read(pc);
-    wire meet_ebreak_r = instruction == 32'h00100073;
+    // reg meet_ebreak_r = instruction == 32'h00100073;
+    assign inner_meet_ebreak = instruction == 32'h00100073;
+    
+    reg meet_ebreak_r;
+    always @(posedge clk) begin
+        meet_ebreak_r <= inner_meet_ebreak;
+    end
     assign meet_ebreak = meet_ebreak_r;
+
+    // deepseek给的建议是把ebreak打一拍再输出
+    // assign meet_ebreak = meet_ebreak_r;
 
     // ID阶段 生成控制信号 读寄存器
     wire reg_wen;
@@ -90,6 +100,8 @@ module top(
         .alu_op (alu_op),
         .alu_out (alu_out)
     ); // 实例化 alu
+
+    // 这一步是尝试修改ebreak的行为了
     assign next_pc = jalr ? {alu_out[31:1], 1'b0} : pc + 4; // 生成next_pc
     
     // MEM阶段 完成内存的读写

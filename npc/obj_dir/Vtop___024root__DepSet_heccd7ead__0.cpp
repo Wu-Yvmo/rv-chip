@@ -108,10 +108,11 @@ VL_INLINE_OPT void Vtop___024root___nba_sequent__TOP__0(Vtop___024root* vlSelf) 
         __Vdly__top__DOT__pc = 0U;
         __Vdlyvset__top__DOT__regfile__DOT__storage__v0 = 1U;
     } else {
-        __Vdly__top__DOT__pc = ((IData)(vlSelf->meet_ebreak)
+        __Vdly__top__DOT__pc = ((0x100073U == vlSelf->top__DOT__instruction)
                                  ? vlSelf->top__DOT__pc
                                  : vlSelf->top__DOT__next_pc);
-        if ((((~ (IData)(vlSelf->meet_ebreak)) & (IData)(vlSelf->top__DOT__reg_wen)) 
+        if ((((~ (IData)(vlSelf->top__DOT__meet_ebreak_r)) 
+              & (IData)(vlSelf->top__DOT__reg_wen)) 
              & (0U != (0x1fU & (vlSelf->top__DOT__instruction 
                                 >> 7U))))) {
             __Vdlyvval__top__DOT__regfile__DOT__storage__v32 
@@ -167,8 +168,10 @@ VL_INLINE_OPT void Vtop___024root___nba_sequent__TOP__0(Vtop___024root* vlSelf) 
             = __Vdlyvval__top__DOT__regfile__DOT__storage__v32;
     }
     vlSelf->top__DOT__pc = __Vdly__top__DOT__pc;
+    vlSelf->top__DOT__meet_ebreak_r = (0x100073U == vlSelf->top__DOT__instruction);
     Vtop___024root____Vdpiimwrap_top__DOT__pmem_read_TOP(vlSelf->top__DOT__pc, vlSelf->__Vfunc_top__DOT__pmem_read__0__Vfuncout);
     vlSelf->top__DOT__instruction = vlSelf->__Vfunc_top__DOT__pmem_read__0__Vfuncout;
+    vlSelf->meet_ebreak = vlSelf->top__DOT__meet_ebreak_r;
     if ((0x40U & vlSelf->top__DOT__instruction)) {
         vlSelf->top__DOT__reg_wen = ((1U & (vlSelf->top__DOT__instruction 
                                             >> 5U)) 
@@ -335,7 +338,6 @@ VL_INLINE_OPT void Vtop___024root___nba_sequent__TOP__0(Vtop___024root* vlSelf) 
         }
         vlSelf->top__DOT__imm_ext_type = 0U;
     }
-    vlSelf->meet_ebreak = (0x100073U == vlSelf->top__DOT__instruction);
     vlSelf->top__DOT__imm = ((4U & (IData)(vlSelf->top__DOT__imm_ext_type))
                               ? ((2U & (IData)(vlSelf->top__DOT__imm_ext_type))
                                   ? 0U : ((1U & (IData)(vlSelf->top__DOT__imm_ext_type))

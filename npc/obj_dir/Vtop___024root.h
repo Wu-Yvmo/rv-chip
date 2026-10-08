@@ -17,6 +17,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop___024root final : public VerilatedModule
     VL_IN8(clk,0,0);
     VL_IN8(rst,0,0);
     VL_OUT8(meet_ebreak,0,0);
+    CData/*0:0*/ top__DOT__meet_ebreak_r;
     CData/*0:0*/ top__DOT__reg_wen;
     CData/*2:0*/ top__DOT__imm_ext_type;
     CData/*2:0*/ top__DOT__memr_mask;
