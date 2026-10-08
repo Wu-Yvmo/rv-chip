@@ -3,6 +3,7 @@
 module top(
     input clk,
     input rst,
+    output meet_ebreak
 );
     // C++提供的内存访问接口
     import "DPI-C" function int pmem_read(input int raddr); // 内存读逻辑
@@ -16,11 +17,15 @@ module top(
     reg [31:0] pc = 0, next_pc = 0;
     always @(posedge clk) begin // pc的更新
         if (rst) pc <= 0;
-        else pc <= next_pc;
+        // pc只在没遇到ebreak时才更新
+        else if (~meet_ebreak) pc <= next_pc;
+        else pc <= pc;
     end
 
     wire [31:0] instruction;
     assign instruction = pmem_read(pc);
+    wire meet_ebreak_r = instruction == 32'h00100073;
+    assign meet_ebreak = meet_ebreak_r;
 
     // ID阶段 生成控制信号 读寄存器
     wire reg_wen;
@@ -33,7 +38,8 @@ module top(
     regfile regfile(
         .clk (clk),
         .rst (rst),
-        .wen (reg_wen),
+        // 寄存器堆只有没遇到ebreak才允许写
+        .wen (reg_wen & ~meet_ebreak),
         .waddr (reg_waddr),
         .wdata (reg_wdata),
         .raddr_rs1 (rs1_addr),
@@ -99,7 +105,8 @@ module top(
     reg [31:0] tmp;
     always @(*) begin
         // 处理读
-        if (mem_ren) begin
+        // 只有在读使能且没遇到ebreak的情况下才读
+        if (mem_ren & ~meet_ebreak) begin
             case (memr_mask)
             `MEMR_MASK_LBU: begin
                 tmp = pmem_read(alu_out);
@@ -115,7 +122,8 @@ module top(
     end
     // 处理写 现在把写放时钟边沿触发
     always @(posedge clk) begin
-        if (mem_wen) begin
+        // 只有在没遇到ebreak且且写使能的情况下才写
+        if (mem_wen & ~meet_ebreak) begin
             pmem_write(alu_out, rs2_data, {{4{1'b0}}, memw_mask});
         end
     end

@@ -5,6 +5,7 @@
 #include "comparable_runtime_statuses.hpp"
 // #include <nvboard.h>
 
+#include <climits>
 #include <cstdlib>
 #include <stdexcept>
 #include <stdio.h>
@@ -52,7 +53,8 @@ std::string dump_comparable_runtime_statuses(ComparableRuntimeStatuses &to_dump)
 // 把emu需要暴露的字段 exter 出来
 extern uint32_t emu_pc;
 extern uint32_t emu_regfile[32];
-void single_cycle();
+extern bool emu_meet_ebreak;
+extern void single_cycle();
 
 ComparableRuntimeStatuses gather_emu_comparable_runtime_statuses() {
 	ComparableRuntimeStatuses comparable_runtime_statuses;
@@ -78,6 +80,8 @@ int main(int argc, char **argv) {
 	Vtop *vtop = new Vtop;
 	// nvboard_bind_all_pins(vtop);
 	// nvboard_init();
+	
+	// 先把rtl的状态都清零
 	vtop->clk = 0;
 	vtop->rst = 1;
 	vtop->eval();
@@ -90,7 +94,9 @@ int main(int argc, char **argv) {
 	vtop->eval();
 	
 	// 正式指令执行部分
-	for (int i = 0; i < 100; i += 1) {
+	// 执行测试直到两边都遇到ebreak
+	// 只有一边时需要报错
+	for (int i = 0; i < INT_MAX; i += 1) {
 		// 1. emu执行一条指令后收集状态
 		single_cycle();
 		auto emu_comparable_runtime_statuses = gather_emu_comparable_runtime_statuses();
@@ -100,14 +106,27 @@ int main(int argc, char **argv) {
 		vtop->clk = 0;
 		vtop->eval();
 		auto rtl_comparable_runtime_statuses = gather_rtl_comparable_runtime_statuses(vtop);
+		// 3.打印emu和rtl的寄存器状态
+		std::cout << std::endl;
+		std::cout << dump_comparable_runtime_statuses(emu_comparable_runtime_statuses) << std::endl;
+		std::cout << dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses) << std::endl;
 		// 比较emu和rtl的运行状态
 		if (!comparable_runtime_statuses_equal(emu_comparable_runtime_statuses, rtl_comparable_runtime_statuses)) {
 			// 打印两个comparable_statuses
-			std::cout << dump_comparable_runtime_statuses(emu_comparable_runtime_statuses) << std::endl;
-			std::cout << dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses) << std::endl;
 			throw std::runtime_error("fatal error, difftest not pass");
 		}
+		printf("finished round: %d, emu_meet_ebreak: %d\n", i, emu_meet_ebreak);
+		if (!emu_meet_ebreak && vtop->meet_ebreak) {
+			throw std::runtime_error("vtop meet ebreak too early");
+		}
+		if (emu_meet_ebreak && !vtop->meet_ebreak) {
+			throw std::runtime_error("emu meet ebreak too early");
+		}
+		if (emu_meet_ebreak && vtop->meet_ebreak) {
+			break;
+		}
 	}
+	std::cout << "test pass!" << std::endl;
 	// nvboard_quit();
 	return 0;
 }

@@ -263,6 +263,7 @@ VL_ATTR_COLD void Vtop___024root___stl_sequent__TOP__0(Vtop___024root* vlSelf) {
         }
         vlSelf->top__DOT__imm_ext_type = 0U;
     }
+    vlSelf->meet_ebreak = (0x100073U == vlSelf->top__DOT__instruction);
     vlSelf->top__DOT__imm = ((4U & (IData)(vlSelf->top__DOT__imm_ext_type))
                               ? ((2U & (IData)(vlSelf->top__DOT__imm_ext_type))
                                   ? 0U : ((1U & (IData)(vlSelf->top__DOT__imm_ext_type))
@@ -368,20 +369,21 @@ VL_ATTR_COLD void Vtop___024root___stl_sequent__TOP__0(Vtop___024root* vlSelf) {
                                                     & vlSelf->top__DOT__instruction)))))))
                                   ? (0xfffffffeU & vlSelf->top__DOT__alu_out)
                                   : ((IData)(4U) + vlSelf->top__DOT__pc));
-    if (((1U & (~ (vlSelf->top__DOT__instruction >> 6U))) 
-         && ((1U & (~ (vlSelf->top__DOT__instruction 
-                       >> 5U))) && ((1U & (~ (vlSelf->top__DOT__instruction 
-                                              >> 4U))) 
-                                    && ((1U & (~ (vlSelf->top__DOT__instruction 
-                                                  >> 3U))) 
-                                        && ((1U & (~ 
-                                                   (vlSelf->top__DOT__instruction 
-                                                    >> 2U))) 
-                                            && ((1U 
-                                                 & (vlSelf->top__DOT__instruction 
-                                                    >> 1U)) 
-                                                && (1U 
-                                                    & vlSelf->top__DOT__instruction)))))))) {
+    if ((((1U & (~ (vlSelf->top__DOT__instruction >> 6U))) 
+          && ((1U & (~ (vlSelf->top__DOT__instruction 
+                        >> 5U))) && ((1U & (~ (vlSelf->top__DOT__instruction 
+                                               >> 4U))) 
+                                     && ((1U & (~ (vlSelf->top__DOT__instruction 
+                                                   >> 3U))) 
+                                         && ((1U & 
+                                              (~ (vlSelf->top__DOT__instruction 
+                                                  >> 2U))) 
+                                             && ((1U 
+                                                  & (vlSelf->top__DOT__instruction 
+                                                     >> 1U)) 
+                                                 && (1U 
+                                                     & vlSelf->top__DOT__instruction))))))) 
+         & (~ (IData)(vlSelf->meet_ebreak)))) {
         if ((0U == (IData)(vlSelf->top__DOT__memr_mask))) {
             Vtop___024root____Vdpiimwrap_top__DOT__pmem_read_TOP(vlSelf->top__DOT__alu_out, vlSelf->__Vfunc_top__DOT__pmem_read__1__Vfuncout);
             vlSelf->top__DOT__tmp = vlSelf->__Vfunc_top__DOT__pmem_read__1__Vfuncout;
@@ -463,7 +465,7 @@ VL_ATTR_COLD void Vtop___024root___ctor_var_reset(Vtop___024root* vlSelf) {
     // Body
     vlSelf->clk = VL_RAND_RESET_I(1);
     vlSelf->rst = VL_RAND_RESET_I(1);
-    vlSelf->__pinNumber3 = VL_RAND_RESET_I(1);
+    vlSelf->meet_ebreak = VL_RAND_RESET_I(1);
     vlSelf->top__DOT__pc = VL_RAND_RESET_I(32);
     vlSelf->top__DOT__next_pc = VL_RAND_RESET_I(32);
     vlSelf->top__DOT__instruction = VL_RAND_RESET_I(32);
