@@ -105,7 +105,7 @@ VL_INLINE_OPT void Vtop___024root___nba_sequent__TOP__0(Vtop___024root* vlSelf) 
     __Vdlyvset__top__DOT__regfile__DOT__storage__v32 = 0U;
     if (vlSelf->rst) {
         vlSelf->top__DOT__regfile__DOT__i = 0x20U;
-        __Vdly__top__DOT__pc = 0U;
+        __Vdly__top__DOT__pc = 0x80000000U;
         __Vdlyvset__top__DOT__regfile__DOT__storage__v0 = 1U;
     } else {
         __Vdly__top__DOT__pc = ((0x100073U == vlSelf->top__DOT__instruction)

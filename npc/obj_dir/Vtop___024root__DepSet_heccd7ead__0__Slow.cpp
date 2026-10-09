@@ -22,7 +22,7 @@ VL_ATTR_COLD void Vtop___024root___eval_static__TOP(Vtop___024root* vlSelf) {
     Vtop__Syms* const __restrict vlSymsp VL_ATTR_UNUSED = vlSelf->vlSymsp;
     VL_DEBUG_IF(VL_DBG_MSGF("+    Vtop___024root___eval_static__TOP\n"); );
     // Body
-    vlSelf->top__DOT__pc = 0U;
+    vlSelf->top__DOT__pc = 0x80000000U;
     vlSelf->top__DOT__next_pc = 0U;
     vlSelf->top__DOT__mem_rdata = 0U;
 }

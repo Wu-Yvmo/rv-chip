@@ -3,6 +3,10 @@
 #include <cstdint>
 #include <stdexcept>
 #include <stdint.h>
+#include <string>
+#include <iostream>
+
+#include "read_file.hpp"
 
 #define OPCODE_LOAD 0b0000011
 #define OPCODE_OP_IMM 0b0010011
@@ -29,39 +33,34 @@
 #define IMM_EXT_TYPE_U 3
 #define IMM_EXT_TYPE_J 4
 
+#define INST_PATH "/home/wuyvmo/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin"
+#define STORAGE_SIZE (0x08000000)
+
 // PC寄存器
-uint32_t emu_pc = 0;
+uint32_t emu_pc = 0x80000000;
 uint32_t emu_regfile[32] = {0};
 bool emu_meet_ebreak = false;
 // 目前运行的程序是 1+2+...+10的程序
 // 字节序是有问题的 不能这么干
-uint8_t emu_dram[256] = {
-    // 0x00: addi x1, x0, 10       机器码 0x00A00093
-    0x93, 0x00, 0xA0, 0x00,
-    // 0x04: addi x2, x0, 20       机器码 0x01400113
-    0x13, 0x01, 0x40, 0x01,
-    // 0x08: add x3, x1, x2        机器码 0x002081B3
-    0xB3, 0x81, 0x20, 0x00,
-    // 0x0C: lui x4, 0x10000       机器码 0x00010237
-    0x37, 0x02, 0x01, 0x00,
-    // 0x10: addi x5, x0, 0x80     机器码 0x08000293
-    0x93, 0x02, 0x00, 0x08,
-    // 0x14: sw x3, 0(x5)          机器码 0x0032A023
-    0x23, 0xA0, 0x32, 0x00,
-    // 0x18: sb x1, 4(x5)          机器码 0x00128223
-    0x23, 0x82, 0x12, 0x00,
-    // 0x1C: lw x6, 0(x5)          机器码 0x0002A303
-    0x03, 0xA3, 0x02, 0x00,
-    // 0x20: lbu x7, 4(x5)         机器码 0x0042C383
-    0x83, 0xC3, 0x42, 0x00,
-    // 0x24: addi x8, x0, 0x2C     机器码 0x02C00413
-    0x13, 0x04, 0xC0, 0x02,
-    // 0x28: jalr x0, 0(x8)        机器码 0x00040067
-    0x67, 0x00, 0x04, 0x00,
-    // 0x2C: ebreak                机器码 0x00100073
-    0x73, 0x00, 0x10, 0x00,
-    // 其余 208 字节自动初始化为 0
-};
+uint8_t emu_dram[STORAGE_SIZE] = {0};
+
+void emu_init_storage() {
+    std::cout << "start emu init" << std::endl;
+    std::string path = INST_PATH;
+    auto file_content = read_file(path.c_str());
+    if (file_content.file_length > STORAGE_SIZE) {
+        throw std::runtime_error("out of storage size");
+    }
+    // 把file_content挪进去
+    for (size_t i = 0; i < file_content.file_length; i += 1) {
+        if (i < file_content.file_length) {
+            emu_dram[i] = file_content.file_content[i];
+            continue;
+        }
+        emu_dram[i] = 0;
+    }
+    std::cout << "finish emu init" << std::endl;
+}
 
 uint32_t select_bit(uint32_t inst, uint32_t i) {
     return (inst >> i) & 1 ? 1 : 0;
@@ -73,14 +72,6 @@ uint32_t select_bits(uint32_t inst, uint32_t l, uint32_t r) {
     return (inst << (31 - l)) >> (31 - l + r);
 }
 
-uint32_t fetch_instruction() {
-    auto inst_3 = (uint32_t)emu_dram[emu_pc + 3];
-    auto inst_2 = (uint32_t)emu_dram[emu_pc + 2];
-    auto inst_1 = (uint32_t)emu_dram[emu_pc + 1];
-    auto inst_0 = emu_dram[emu_pc];
-    return inst_3 << 24 | inst_2 << 16 | inst_1 << 8 | inst_0;
-}
-
 uint32_t register_read(uint32_t no) {
     return no ? emu_regfile[no] : 0;
 }
@@ -90,6 +81,13 @@ void register_write(uint32_t no, uint32_t data) {
 }
 
 uint32_t dram_read(uint32_t addr, int mode) {
+    // 修正偏移
+    addr -= 0x80000000;
+
+    if (addr > STORAGE_SIZE) {
+        throw std::runtime_error("pmem storage too small");
+    }
+    // 正式读内存
     if (mode == DRAM_READ_LBU) {
         return (uint32_t)emu_dram[addr];
     }
@@ -104,6 +102,13 @@ uint32_t dram_read(uint32_t addr, int mode) {
 }
 
 void dram_write(uint32_t addr, int mode, uint32_t data) {
+    // 修正偏移
+    addr -= 0x80000000;
+
+    if (addr > STORAGE_SIZE) {
+        throw std::runtime_error("pmem storage too small");
+    }
+    // 正式写内存
     auto data_3 = (uint8_t)(data >> 24);
     auto data_2 = (uint8_t)(data >> 16);
     auto data_1 = (uint8_t)(data >> 8);
@@ -116,6 +121,12 @@ void dram_write(uint32_t addr, int mode, uint32_t data) {
     emu_dram[addr+2] = data_2;
     emu_dram[addr+3] = data_3;
     return;
+}
+
+uint32_t fetch_instruction() {
+    auto inst = dram_read(emu_pc, DRAM_READ_LW);
+
+    return inst;
 }
 
 int fetch_imm_ext_type(uint32_t inst) {
@@ -291,3 +302,6 @@ void single_cycle() {
         default: throw std::runtime_error("shouldn't run");
     }
 }
+
+// 这个地方的访存什么的我真得好好研究一下
+// 

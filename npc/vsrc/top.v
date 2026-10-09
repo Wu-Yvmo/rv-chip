@@ -14,10 +14,10 @@ module top(
     ); // 内存写逻辑
 
     // IF阶段 取指令
-    reg [31:0] pc = 0, next_pc = 0;
+    reg [31:0] pc = 32'h80000000, next_pc = 0;
     wire inner_meet_ebreak;
     always @(posedge clk) begin // pc的更新
-        if (rst) pc <= 0;
+        if (rst) pc <= 32'h80000000; // 目前的复位值修改为0x80000000
         // pc只在没遇到ebreak时才更新
         else if (~inner_meet_ebreak) pc <= next_pc;
         else pc <= pc;

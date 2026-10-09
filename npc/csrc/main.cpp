@@ -74,6 +74,9 @@ ComparableRuntimeStatuses gather_rtl_comparable_runtime_statuses(Vtop *to_gather
 	return comparable_runtime_statuses;
 }
 
+extern void emu_init_storage();
+extern void pmem_load_insts();
+
 int main(int argc, char **argv) {
 	std::cout << "start simulation." << std::endl;
 	Verilated::commandArgs(argc, argv);
@@ -96,6 +99,10 @@ int main(int argc, char **argv) {
 	// 正式指令执行部分
 	// 执行测试直到两边都遇到ebreak
 	// 只有一边时需要报错
+	std::cout << "emu init storage start" << std::endl;
+	emu_init_storage();
+	pmem_load_insts();
+	std::cout << "start verilator" << std::endl;
 	for (int i = 0; i < INT_MAX; i += 1) {
 		// 1. emu执行一条指令后收集状态
 		single_cycle();

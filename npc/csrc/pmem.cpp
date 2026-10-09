@@ -3,38 +3,42 @@
 //   input int waddr, input int wdata, input byte wmask);
 
 #include <cstdint>
+#include <stdexcept>
 #include <stdint.h>
+#include <string>
 
-uint8_t storage[256] = {
-    // 0x00: addi x1, x0, 10       机器码 0x00A00093
-    0x93, 0x00, 0xA0, 0x00,
-    // 0x04: addi x2, x0, 20       机器码 0x01400113
-    0x13, 0x01, 0x40, 0x01,
-    // 0x08: add x3, x1, x2        机器码 0x002081B3
-    0xB3, 0x81, 0x20, 0x00,
-    // 0x0C: lui x4, 0x10000       机器码 0x00010237
-    0x37, 0x02, 0x01, 0x00,
-    // 0x10: addi x5, x0, 0x80     机器码 0x08000293
-    0x93, 0x02, 0x00, 0x08,
-    // 0x14: sw x3, 0(x5)          机器码 0x0032A023
-    0x23, 0xA0, 0x32, 0x00,
-    // 0x18: sb x1, 4(x5)          机器码 0x00128223
-    0x23, 0x82, 0x12, 0x00,
-    // 0x1C: lw x6, 0(x5)          机器码 0x0002A303
-    0x03, 0xA3, 0x02, 0x00,
-    // 0x20: lbu x7, 4(x5)         机器码 0x0042C383
-    0x83, 0xC3, 0x42, 0x00,
-    // 0x24: addi x8, x0, 0x2C     机器码 0x02C00413
-    0x13, 0x04, 0xC0, 0x02,
-    // 0x28: jalr x0, 0(x8)        机器码 0x00040067
-    0x67, 0x00, 0x04, 0x00,
-    // 0x2C: ebreak                机器码 0x00100073
-    0x73, 0x00, 0x10, 0x00,
-    // 其余 208 字节自动初始化为 0
-};
+#include "read_file.hpp"
+
+// :~/ysyx-workbench/am-kernels/tests/cpu-tests
+#define INST_PATH "/home/wuyvmo/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin"
+#define STORAGE_SIZE (0x08000000)
+
+uint8_t storage[STORAGE_SIZE] = {0};
+
+void pmem_load_insts() {
+    std::string inst_path = INST_PATH;
+    auto file_content = read_file(inst_path.c_str());
+    if (file_content.file_length > STORAGE_SIZE) {
+        throw std::runtime_error("out of storage size");
+    }
+
+    // 将文件中每个uint8_t都放进去
+    for (size_t i = 0; i < STORAGE_SIZE; i += 1) {
+        if (i < file_content.file_length) {
+            storage[i] = file_content.file_content[i];
+            continue;
+        }
+        storage[i] = 0;
+    }
+}
 
 // 行为：总读4个字节发送
+// 按照0x80000000的偏移进行访问
 extern "C" int pmem_read(int raddr) {
+    raddr -= 0x80000000;
+    if (raddr > STORAGE_SIZE) {
+        throw std::runtime_error("pmem storage too small");
+    }
     auto d1 = (int)storage[raddr];
     auto d2 = (int)storage[raddr+1];
     auto d3 = (int)storage[raddr+2];
@@ -44,7 +48,13 @@ extern "C" int pmem_read(int raddr) {
 }
 
 // 行为：0001 0011 1111表示要写的字节数
+// 按照0x80000000的偏移进行访问
 extern "C" void pmem_write(int waddr, int wdata, uint8_t wmask) {
+    waddr -= 0x80000000;
+    if (waddr > STORAGE_SIZE) {
+        throw std::runtime_error("pmem storage too small");
+    }
+
     storage[waddr] = (uint8_t)wdata;
     if (wmask == 0b0001) {
         return;
