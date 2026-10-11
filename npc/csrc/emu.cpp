@@ -100,6 +100,11 @@ uint32_t dram_read(uint32_t addr, int mode) {
 }
 
 void dram_write(uint32_t addr, int mode, uint32_t data) {
+    if (addr == 0x10000000) {  // 写入UART
+        // fputc(data & 0xff, stderr);   // 在stdio.h中定义
+        return;
+    }
+
     // 修正偏移
     addr -= 0x80000000;
 

@@ -48,6 +48,10 @@ extern "C" int pmem_read(int raddr) {
 // 行为：0001 0011 1111表示要写的字节数
 // 按照0x80000000的偏移进行访问
 extern "C" void pmem_write(int waddr, int wdata, uint8_t wmask) {
+    if (waddr == 0x10000000) {  // 写入UART
+        fputc(wdata & 0xff, stderr);   // 在stdio.h中定义
+        return;
+    }
     waddr -= 0x80000000;
     if (waddr > STORAGE_SIZE) {
         throw std::runtime_error("pmem storage too small");

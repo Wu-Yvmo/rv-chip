@@ -142,15 +142,15 @@ int main(int argc, char **argv) {
 		vtop->eval();
 		auto rtl_comparable_runtime_statuses = gather_rtl_comparable_runtime_statuses(vtop);
 		// 3.打印emu和rtl的寄存器状态
-		std::cout << std::endl;
-		std::cout << dump_comparable_runtime_statuses(emu_comparable_runtime_statuses) << std::endl;
-		std::cout << dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses) << std::endl;
+		// std::cout << std::endl;
+		// std::cout << dump_comparable_runtime_statuses(emu_comparable_runtime_statuses) << std::endl;
+		// std::cout << dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses) << std::endl;
 		// 比较emu和rtl的运行状态
 		if (!comparable_runtime_statuses_equal(emu_comparable_runtime_statuses, rtl_comparable_runtime_statuses)) {
 			// 打印两个comparable_statuses
 			throw std::runtime_error("fatal error, difftest not pass");
 		}
-		printf("finished round: %d, emu_meet_ebreak: %d\n", i, emu_meet_ebreak);
+		// printf("finished round: %d, emu_meet_ebreak: %d\n", i, emu_meet_ebreak);
 		if (!emu_meet_ebreak && vtop->meet_ebreak) {
 			throw std::runtime_error("vtop meet ebreak too early");
 		}
