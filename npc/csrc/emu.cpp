@@ -33,7 +33,6 @@
 #define IMM_EXT_TYPE_U 3
 #define IMM_EXT_TYPE_J 4
 
-#define INST_PATH "/home/wuyvmo/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin"
 #define STORAGE_SIZE (0x08000000)
 
 // PC寄存器
@@ -44,10 +43,9 @@ bool emu_meet_ebreak = false;
 // 字节序是有问题的 不能这么干
 uint8_t emu_dram[STORAGE_SIZE] = {0};
 
-void emu_init_storage() {
+void emu_init_storage(const char *path) {
     std::cout << "start emu init" << std::endl;
-    std::string path = INST_PATH;
-    auto file_content = read_file(path.c_str());
+    auto file_content = read_file(path);
     if (file_content.file_length > STORAGE_SIZE) {
         throw std::runtime_error("out of storage size");
     }

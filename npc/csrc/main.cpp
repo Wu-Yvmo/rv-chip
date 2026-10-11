@@ -74,11 +74,41 @@ ComparableRuntimeStatuses gather_rtl_comparable_runtime_statuses(Vtop *to_gather
 	return comparable_runtime_statuses;
 }
 
-extern void emu_init_storage();
-extern void pmem_load_insts();
+extern void emu_init_storage(const char *path);
+extern void pmem_load_insts(const char *path);
+
+// 要装入 NPC 存储器的程序镜像, 由命令行参数 --image <path> 指定.
+// 定义在这里, 让 pmem.cpp / emu.cpp 用 extern 引用同一个路径,
+// 这样切换程序不用重新编译仿真环境.
+const char *image_path = nullptr;
+
+// 解析仿真环境自己的命令行参数
+static void parse_args(int argc, char **argv) {
+	for (int i = 1; i < argc; i += 1) {
+		if (std::string(argv[i]) != "--image") {
+			continue;
+		}
+		if (i + 1 >= argc) {
+			throw std::runtime_error("--image 后面需要给出程序镜像的路径");
+		}
+		image_path = argv[i + 1];
+		// 把这两个参数从 argv 里摘掉, 免得 Verilator 因为不认识而报错
+		for (int j = i; j + 2 < argc; j += 1) {
+			argv[j] = argv[j + 2];
+		}
+		argc -= 2;
+		i -= 1;
+	}
+}
 
 int main(int argc, char **argv) {
-	std::cout << "start simulation." << std::endl;
+	parse_args(argc, argv);
+	if (image_path) {
+		emu_init_storage(image_path);
+		pmem_load_insts(image_path);
+	} else {
+		throw std::runtime_error("no valid image");
+	}
 	Verilated::commandArgs(argc, argv);
 	Vtop *vtop = new Vtop;
 	// nvboard_bind_all_pins(vtop);
@@ -100,8 +130,6 @@ int main(int argc, char **argv) {
 	// 执行测试直到两边都遇到ebreak
 	// 只有一边时需要报错
 	std::cout << "emu init storage start" << std::endl;
-	emu_init_storage();
-	pmem_load_insts();
 	std::cout << "start verilator" << std::endl;
 	for (int i = 0; i < INT_MAX; i += 1) {
 		// 1. emu执行一条指令后收集状态
@@ -133,7 +161,13 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
-	std::cout << "test pass!" << std::endl;
+	// 检查a0寄存器
+	auto a0 = vtop->rootp->top__DOT__regfile__DOT__storage[10];
+	auto test_status = a0 == 0 ? "PASS" : "FAIL";
+	std::cout << test_status << std::endl;
+	if (a0) {
+		return 1; // 让make能拿到失败
+	}
 	// nvboard_quit();
 	return 0;
 }

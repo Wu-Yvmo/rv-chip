@@ -25,6 +25,11 @@ verilator-nvboard:
 build: verilator
 	make -C obj_dir -f Vtop.mk Vtop.out
 
+IMAGE ?= $(error 请指定 IMAGE, 例如: make run IMAGE=build/dummy-minirv-npc.bin)
+
+run: build
+	./obj_dir/Vtop.out --image "$(abspath $(IMAGE))"
+	
 sim: build
 	./obj_dir/Vtop.out
 

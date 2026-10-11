@@ -10,14 +10,12 @@
 #include "read_file.hpp"
 
 // :~/ysyx-workbench/am-kernels/tests/cpu-tests
-#define INST_PATH "/home/wuyvmo/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-minirv-npc.bin"
 #define STORAGE_SIZE (0x08000000)
 
 uint8_t storage[STORAGE_SIZE] = {0};
 
-void pmem_load_insts() {
-    std::string inst_path = INST_PATH;
-    auto file_content = read_file(inst_path.c_str());
+void pmem_load_insts(const char *path) {
+    auto file_content = read_file(path);
     if (file_content.file_length > STORAGE_SIZE) {
         throw std::runtime_error("out of storage size");
     }
