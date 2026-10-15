@@ -19,14 +19,14 @@
 // DPI TYPES for DPI Export callbacks (Internal use)
 
 // SYMS CLASS (contains all model state)
-class alignas(VL_CACHE_LINE_BYTES)Vtop__Syms final : public VerilatedSyms {
+class alignas(VL_CACHE_LINE_BYTES) Vtop__Syms final : public VerilatedSyms {
   public:
     // INTERNAL STATE
     Vtop* const __Vm_modelp;
     bool __Vm_activity = false;  ///< Used by trace routines to determine change occurred
     uint32_t __Vm_baseCode = 0;  ///< Used by trace routines when tracing multiple models
     VlDeleter __Vm_deleter;
-    bool __Vm_didInit = false;
+    bool& __Vm_didInit;
 
     // MODULE INSTANCE STATE
     Vtop___024root                 TOP;
@@ -36,7 +36,7 @@ class alignas(VL_CACHE_LINE_BYTES)Vtop__Syms final : public VerilatedSyms {
     ~Vtop__Syms();
 
     // METHODS
-    const char* name() { return TOP.name(); }
+    const char* name() const { return TOP.vlNamep; }
 };
 
 #endif  // guard

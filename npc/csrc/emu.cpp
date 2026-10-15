@@ -78,7 +78,22 @@ void register_write(uint32_t no, uint32_t data) {
     if (no) emu_regfile[no] = data;
 }
 
+extern bool uart_ready;
+extern unsigned long long get_time_buffer;
+extern uint64_t get_time();
+
 uint32_t dram_read(uint32_t addr, int mode) {
+    if (addr == 0x10000004) {  // 读出UART状态
+        return  uart_ready; // 就绪概率为12.5%
+    }
+    // 读出时钟的低32位
+    else if (addr == 0x20000000) { 
+        return get_time() & 0xffffffff; 
+    }
+    // 读出时钟的高32位
+    else if (addr == 0x20000004) { 
+        return get_time() >> 32; 
+    }
     // 修正偏移
     addr -= 0x80000000;
 
@@ -283,8 +298,10 @@ void exec_opcode_jalr(uint32_t inst) {
     emu_pc = target;
 }
 
+size_t emu_instruction_executed = 0;
 // 执行一条指令
 void single_cycle() {
+    emu_instruction_executed += 1;
     // 取指令
     auto inst = fetch_instruction();
     if (inst == 0x00100073) {

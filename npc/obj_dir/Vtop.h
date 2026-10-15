@@ -17,11 +17,18 @@ class VerilatedVcdC;
 
 // This class is the main interface to the Verilated model
 class alignas(VL_CACHE_LINE_BYTES) Vtop VL_NOT_FINAL : public VerilatedModel {
+    friend class Vtop__Syms;
   private:
     // Symbol table holding complete model state (owned by this class)
     Vtop__Syms* const vlSymsp;
+    // Evaluation loop
+    VerilatedEvalLoop m_evalLoop;
 
   public:
+
+    // CONSTEXPR CAPABILITIES
+    // Verilated with --trace?
+    static constexpr bool traceCapable = true;
 
     // PORTS
     // The application code writes and reads these signals to
@@ -29,6 +36,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop VL_NOT_FINAL : public VerilatedModel {
     VL_IN8(&clk,0,0);
     VL_IN8(&rst,0,0);
     VL_OUT8(&meet_ebreak,0,0);
+    VL_OUT8(&is_load_export,0,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.
@@ -66,7 +74,7 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop VL_NOT_FINAL : public VerilatedModel {
     /// Returns time at next time slot. Aborts if !eventsPending()
     uint64_t nextTimeSlot();
     /// Trace signals in the model; called by application code
-    void trace(VerilatedVcdC* tfp, int levels, int options = 0);
+    void trace(VerilatedTraceBaseC* tfp, int levels, int options = 0) { contextp()->trace(tfp, levels, options); }
     /// Retrieve name of this model instance (as passed to constructor).
     const char* name() const;
 
@@ -81,6 +89,32 @@ class alignas(VL_CACHE_LINE_BYTES) Vtop VL_NOT_FINAL : public VerilatedModel {
     /// Re-allocate necessary resources. Called after cloning.
     void atClone() const;
     std::unique_ptr<VerilatedTraceConfig> traceConfig() const override final;
+  private:
+
+    // Internal functions - the model's evaluation entry points
+    void evalBegin() override final;
+    void evalEnd() override final;
+    void evalStatic() override final;
+    void evalInitial() override final;
+    bool evalStl(bool firstIteration) override final;
+    void evalSample() override final;
+    bool evalIco(bool firstIteration) override final;
+    bool evalAct() override final;
+    bool evalInact() override final;
+    bool evalNba() override final;
+    bool evalObs() override final;
+    bool evalReact() override final;
+    void evalPostponed() override final;
+    void evalFinal() override final;
+    void dumpTriggersStl() override final;
+    void dumpTriggersIco() override final;
+    void dumpTriggersAct() override final;
+    void dumpTriggersNba() override final;
+    void dumpTriggersObs() override final;
+    void dumpTriggersReact() override final;
+
+    // Internal functions - trace registration
+    void traceBaseModel(VerilatedTraceBaseC* tfp, int levels, int options);
 };
 
 #endif  // guard

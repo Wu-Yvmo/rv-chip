@@ -27,7 +27,8 @@ module control(
     // 但是总共是5种
     output reg [2:0] memr_mask, // 读内存的掩码
     output wire reg_wen, // 寄存器写使能
-    output wire [1:0] wb_type // 写回寄存器堆的数据来源
+    output wire [1:0] wb_type, // 写回寄存器堆的数据来源
+    output reg is_load // 是load指令
 );
     // 正文
     always @(*) begin
@@ -41,6 +42,7 @@ module control(
         mem_ren = 0;
         reg_wen = 0;
         wb_type = 0;
+        is_load = 0;
         // 对imm_ext_type的译码
         case (instruction[6:0])
         `OPCODE_LOAD: imm_ext_type = `IMM_EXT_TYPE_I;
@@ -162,6 +164,16 @@ module control(
         `OPCODE_LUI: wb_type = `WB_TYPE_IMM;
         `OPCODE_JALR: wb_type = `WB_TYPE_PCP4;
         default: wb_type = 0;
+        endcase
+        // 对is_load的译码
+        case (instruction[6:0])
+        `OPCODE_LOAD: is_load = 1;
+        `OPCODE_OP_IMM: is_load = 0;
+        `OPCODE_STORE: is_load = 0;
+        `OPCODE_OP: is_load = 0;
+        `OPCODE_LUI: is_load = 0;
+        `OPCODE_JALR: is_load = 0;
+        default: is_load = 0;
         endcase
     end
 endmodule

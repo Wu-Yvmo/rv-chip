@@ -53,3 +53,7 @@
 `define WB_TYPE_PCP4 2'b01
 `define WB_TYPE_ALU 2'b10
 `define WB_TYPE_MEM 2'b11
+
+`define IFU_STATUS_IDLE 2'b00
+`define IFU_STATUS_WAIT 2'b01
+`define IFU_STATUS_WAIT_LOAD 2'b10

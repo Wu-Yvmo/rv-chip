@@ -6,6 +6,7 @@
 // #include <nvboard.h>
 
 #include <climits>
+#include <cstdint>
 #include <cstdlib>
 #include <stdexcept>
 #include <stdio.h>
@@ -13,6 +14,10 @@
 #include <iostream>
 #include <format>
 #include <unistd.h>
+
+#define IFU_STATUS_IDLE 0
+#define IFU_STATUS_WAIT 1
+#define IFU_STATUS_WAIT_LOAD 2
 
 void nvboard_bind_all_pins(Vtop *);
 
@@ -101,6 +106,10 @@ static void parse_args(int argc, char **argv) {
 	}
 }
 
+extern uint64_t cycle_count;
+extern int ifu_status;
+extern size_t emu_instruction_executed;
+
 int main(int argc, char **argv) {
 	parse_args(argc, argv);
 	if (image_path) {
@@ -131,35 +140,48 @@ int main(int argc, char **argv) {
 	// 只有一边时需要报错
 	std::cout << "emu init storage start" << std::endl;
 	std::cout << "start verilator" << std::endl;
-	for (int i = 0; i < INT_MAX; i += 1) {
+	for (size_t i = 0; i < SIZE_MAX; i += 1) {
+		cycle_count = i;
 		// 1. emu执行一条指令后收集状态
-		single_cycle();
-		auto emu_comparable_runtime_statuses = gather_emu_comparable_runtime_statuses();
 		// 2. rtl执行一条指令后收集状态
 		vtop->clk = 1;
 		vtop->eval();
 		vtop->clk = 0;
 		vtop->eval();
+		// 每次都应该在指令完成提交时执行
+		if ((ifu_status == IFU_STATUS_WAIT && !vtop->is_load_export) || (ifu_status == IFU_STATUS_WAIT_LOAD && vtop->is_load_export)) {
+			single_cycle();
+		}
+		auto emu_comparable_runtime_statuses = gather_emu_comparable_runtime_statuses();
 		auto rtl_comparable_runtime_statuses = gather_rtl_comparable_runtime_statuses(vtop);
-		// 3.打印emu和rtl的寄存器状态
-		// std::cout << std::endl;
-		// std::cout << dump_comparable_runtime_statuses(emu_comparable_runtime_statuses) << std::endl;
-		// std::cout << dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses) << std::endl;
+		// 打印两个
+		auto emu_dump = dump_comparable_runtime_statuses(emu_comparable_runtime_statuses);
+		auto rtl_dump = dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses);
+		// std::cout << "emu:" << std::endl;
+		// std::cout << emu_dump << std::endl;
+		// std::cout << "rtl:" << std::endl;
+		// std::cout << rtl_dump << std::endl;
 		// 比较emu和rtl的运行状态
-		if (!comparable_runtime_statuses_equal(emu_comparable_runtime_statuses, rtl_comparable_runtime_statuses)) {
-			// 打印两个comparable_statuses
-			throw std::runtime_error("fatal error, difftest not pass");
+		// 只在idle状态下检查
+		if (ifu_status == IFU_STATUS_IDLE) {
+			if (!comparable_runtime_statuses_equal(emu_comparable_runtime_statuses, rtl_comparable_runtime_statuses)) {
+				// 打印两个comparable_statuses
+				throw std::runtime_error("fatal error, difftest not pass");
+			}
+			if (!emu_meet_ebreak && vtop->meet_ebreak) {
+				throw std::runtime_error("vtop meet ebreak too early");
+			}
+			if (emu_meet_ebreak && !vtop->meet_ebreak) {
+				throw std::runtime_error("emu meet ebreak too early");
+			}
+			if (emu_meet_ebreak && vtop->meet_ebreak) {
+				std::cout << std::format("IPC is: {}", (double)emu_instruction_executed / i) << std::endl;
+				break;
+			}
 		}
-		// printf("finished round: %d, emu_meet_ebreak: %d\n", i, emu_meet_ebreak);
-		if (!emu_meet_ebreak && vtop->meet_ebreak) {
-			throw std::runtime_error("vtop meet ebreak too early");
-		}
-		if (emu_meet_ebreak && !vtop->meet_ebreak) {
-			throw std::runtime_error("emu meet ebreak too early");
-		}
-		if (emu_meet_ebreak && vtop->meet_ebreak) {
-			break;
-		}
+		// if (vtop->meet_ebreak) {
+		// 	break;
+		// }
 	}
 	// 检查a0寄存器
 	auto a0 = vtop->rootp->top__DOT__regfile__DOT__storage[10];

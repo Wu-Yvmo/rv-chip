@@ -2,19 +2,31 @@
 // import "DPI-C" function void pmem_write(
 //   input int waddr, input int wdata, input byte wmask);
 
+#include <bits/types/struct_timeval.h>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <stdint.h>
 #include <string>
+#include <sys/select.h>
+
+#include <sys/time.h>
 
 #include "read_file.hpp"
 
-// :~/ysyx-workbench/am-kernels/tests/cpu-tests
 #define STORAGE_SIZE (0x08000000)
 
+// 100MHz
+#define CYCLE_PER_US 1000
+
 uint8_t storage[STORAGE_SIZE] = {0};
+timeval pmem_start_time;
+uint64_t cycle_count;
 
 void pmem_load_insts(const char *path) {
+    // 初始化时间 
+    gettimeofday(&pmem_start_time, nullptr);
+
     auto file_content = read_file(path);
     if (file_content.file_length > STORAGE_SIZE) {
         throw std::runtime_error("out of storage size");
@@ -30,9 +42,33 @@ void pmem_load_insts(const char *path) {
     }
 }
 
+bool uart_ready = false;
+
+unsigned long long get_time_buffer = 0;
+
+unsigned long long get_time() {
+    return cycle_count / CYCLE_PER_US;
+}
+
 // 行为：总读4个字节发送
 // 按照0x80000000的偏移进行访问
+// deepseek说这种改发不是很行
 extern "C" int pmem_read(int raddr) {
+    // uart状态读
+    if (raddr == 0x10000004) {  // 读出UART状态
+        uart_ready = (rand() & 0x7) == 0 ? 1 : 0;
+        return uart_ready; // 就绪概率为12.5%
+    }
+    // 读出时钟的低32位
+    else if (raddr == 0x20000000) { 
+        return get_time() & 0xffffffff; 
+    }
+    // 读出时钟的高32位
+    else if (raddr == 0x20000004) { 
+        return get_time() >> 32; 
+    }
+
+    // 常规的访存逻辑
     raddr -= 0x80000000;
     if (raddr > STORAGE_SIZE) {
         throw std::runtime_error("pmem storage too small");
@@ -52,6 +88,8 @@ extern "C" void pmem_write(int waddr, int wdata, uint8_t wmask) {
         fputc(wdata & 0xff, stderr);   // 在stdio.h中定义
         return;
     }
+    
+    // 常规的内存写逻辑
     waddr -= 0x80000000;
     if (waddr > STORAGE_SIZE) {
         throw std::runtime_error("pmem storage too small");
@@ -68,4 +106,22 @@ extern "C" void pmem_write(int waddr, int wdata, uint8_t wmask) {
     storage[waddr+2] = (uint8_t)(wdata>>16);
     storage[waddr+3] = (uint8_t)(wdata>>24);
     return;
+}
+
+#define IFU_STATUS_IDLE 0
+#define IFU_STATUS_WAIT 1
+#define IFU_STATUS_WAIT_LOAD 2
+
+int ifu_status;
+
+extern "C" void ifu_status_at_idle() {
+    ifu_status = IFU_STATUS_IDLE;
+}
+
+extern "C" void ifu_status_at_wait() {
+    ifu_status = IFU_STATUS_WAIT;
+}
+
+extern "C" void ifu_status_at_wait_load() {
+    ifu_status = IFU_STATUS_WAIT_LOAD;
 }
