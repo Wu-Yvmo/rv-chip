@@ -42,9 +42,14 @@ module simple_bus(
         input int wdata, 
         input byte wmask
     ); // 内存写逻辑
+    integer time_elapse = 5;
     // 处理if
+    // 思考一下怎么实现延时
+    // 首先需要让reqvalid只在idle周期有效
     always @(posedge clk) begin
         if (ifu_reqValid) begin
+            // if (time_elapse == 0) begin
+            // end
             ifu_rdata <= pmem_read(ifu_raddr);
             ifu_respValid <= 1;
         end
