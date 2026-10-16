@@ -61,22 +61,21 @@ extern uint32_t emu_regfile[32];
 extern bool emu_meet_ebreak;
 extern void single_cycle();
 
-ComparableRuntimeStatuses gather_emu_comparable_runtime_statuses() {
-	ComparableRuntimeStatuses comparable_runtime_statuses;
-	comparable_runtime_statuses.pc = emu_pc;
+ComparableRuntimeStatuses emu_comparable_runtime_statuses;
+ComparableRuntimeStatuses rtl_comparable_runtime_statuses;
+
+void gather_emu_comparable_runtime_statuses() {
+	emu_comparable_runtime_statuses.pc = emu_pc;
 	for (auto i = 0; i < 32; i += 1) {
-		comparable_runtime_statuses.regfile[i] = emu_regfile[i];
+		emu_comparable_runtime_statuses.regfile[i] = emu_regfile[i];
 	}
-	return comparable_runtime_statuses;
 }
 
-ComparableRuntimeStatuses gather_rtl_comparable_runtime_statuses(Vtop *to_gather) {
-	ComparableRuntimeStatuses comparable_runtime_statuses;
-	comparable_runtime_statuses.pc = to_gather->rootp->top__DOT__pc;
+void gather_rtl_comparable_runtime_statuses(Vtop *to_gather) {
+	rtl_comparable_runtime_statuses.pc = to_gather->rootp->top__DOT__npc__DOT__pc;
 	for (auto i = 0; i < 32; i += 1) {
-		comparable_runtime_statuses.regfile[i] = to_gather->rootp->top__DOT__regfile__DOT__storage[i];
+		rtl_comparable_runtime_statuses.regfile[i] = to_gather->rootp->top__DOT__npc__DOT__regfile__DOT__storage[i];
 	}
-	return comparable_runtime_statuses;
 }
 
 extern void emu_init_storage(const char *path);
@@ -152,11 +151,11 @@ int main(int argc, char **argv) {
 		if ((ifu_status == IFU_STATUS_WAIT && !vtop->is_load_export) || (ifu_status == IFU_STATUS_WAIT_LOAD && vtop->is_load_export)) {
 			single_cycle();
 		}
-		auto emu_comparable_runtime_statuses = gather_emu_comparable_runtime_statuses();
-		auto rtl_comparable_runtime_statuses = gather_rtl_comparable_runtime_statuses(vtop);
+		gather_emu_comparable_runtime_statuses();
+		gather_rtl_comparable_runtime_statuses(vtop);
 		// 打印两个
-		auto emu_dump = dump_comparable_runtime_statuses(emu_comparable_runtime_statuses);
-		auto rtl_dump = dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses);
+		// auto emu_dump = dump_comparable_runtime_statuses(emu_comparable_runtime_statuses);
+		// auto rtl_dump = dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses);
 		// std::cout << "emu:" << std::endl;
 		// std::cout << emu_dump << std::endl;
 		// std::cout << "rtl:" << std::endl;
@@ -166,6 +165,12 @@ int main(int argc, char **argv) {
 		if (ifu_status == IFU_STATUS_IDLE) {
 			if (!comparable_runtime_statuses_equal(emu_comparable_runtime_statuses, rtl_comparable_runtime_statuses)) {
 				// 打印两个comparable_statuses
+				auto emu_dump = dump_comparable_runtime_statuses(emu_comparable_runtime_statuses);
+				auto rtl_dump = dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses);
+				std::cout << "emu:" << std::endl;
+				std::cout << emu_dump << std::endl;
+				std::cout << "rtl:" << std::endl;
+				std::cout << rtl_dump << std::endl;
 				throw std::runtime_error("fatal error, difftest not pass");
 			}
 			if (!emu_meet_ebreak && vtop->meet_ebreak) {
@@ -179,12 +184,15 @@ int main(int argc, char **argv) {
 				break;
 			}
 		}
+		// if (i % 1000000 == 0) {
+		// 	printf("inst executed: %d\n", i % 1000000 == 0);
+		// }
 		// if (vtop->meet_ebreak) {
 		// 	break;
 		// }
 	}
 	// 检查a0寄存器
-	auto a0 = vtop->rootp->top__DOT__regfile__DOT__storage[10];
+	auto a0 = vtop->rootp->top__DOT__npc__DOT__regfile__DOT__storage[10];
 	auto test_status = a0 == 0 ? "PASS" : "FAIL";
 	std::cout << test_status << std::endl;
 	if (a0) {

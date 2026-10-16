@@ -41,7 +41,7 @@ VM_PREFIX_INCLUDE = <Vtop.h>
 VM_PREFIX_INCLUDE_DPI = <Vtop__Dpi.h>
 # User CFLAGS (from -CFLAGS on Verilator command line)
 VM_USER_CFLAGS = \
-  -std=c++20 -I./csrc \
+  -O3 -std=c++20 -I./csrc \
 
 # User LDLIBS (from -LDFLAGS on Verilator command line)
 VM_USER_LDLIBS = \

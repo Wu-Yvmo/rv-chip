@@ -2,7 +2,7 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 VSRC = ./vsrc/defines.v ./vsrc/alu.v ./vsrc/control.v \
 	./vsrc/immgen.v ./vsrc/regfile.v ./vsrc/top.v \
-	./vsrc/ifu.v ./vsrc/lsu.v
+	./vsrc/ifu.v ./vsrc/lsu.v ./vsrc/npc.v ./vsrc/simple_bus.v
 
 CPPSRC = ./csrc/read_file.cpp ./csrc/emu.cpp ./csrc/pmem.cpp ./csrc/main.cpp
 CPPSRC_NVBOARD = build/auto_bind.cpp ./csrc/emu.cpp ./csrc/main.cpp
@@ -12,13 +12,13 @@ all build sim:
 verilator:
 	verilator --cc --exe -Wall -Wno-fatal --trace --top-module top \
 		-I./vsrc \
-		-CFLAGS "-std=c++20 -I./csrc" \
+		-CFLAGS "-O3 -std=c++20 -I./csrc" \
 		$(VSRC) $(CPPSRC)
 
 # 带nvboard
 verilator-nvboard:
 	verilator --cc --exe -Wall -Wno-fatal --trace \
-		-CFLAGS "-std=c++20 -I$(NVBOARD_USR_INC) $(shell sdl2-config --cflags)" \
+		-CFLAGS "-O3 -std=c++20 -I$(NVBOARD_USR_INC) $(shell sdl2-config --cflags)" \
  		-LDFLAGS "$(NVBOARD_ARCHIVE) -lSDL2 -lSDL2_image -lSDL2_ttf" \
 		-I./vsrc \
 		$(VSRC) $(CPPSRC)

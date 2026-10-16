@@ -13,35 +13,58 @@
 // 然后再看别的内容
 
 // simple bus和 if lsu的关系是什么?
+// output [31:0] ifu_raddr,
+// input  [31:0] ifu_rdata,
+`include "defines.v"
+
 module simple_bus(
     input clk,
     // if模块的信号
-    input if_reqValid,
-    input [31:0] if_addr,
-    output [31:0] if_data,
-    output reg if_respValid,
+    input ifu_reqValid,
+    input [31:0] ifu_raddr,
+    output reg [31:0] ifu_rdata,
+    output reg ifu_respValid,
     // lsu模块的信号
     input lsu_reqValid,
-    input [31:0] lsu_addr,
+    input [31:0] lsu_raddr,
+    input [2:0] lsu_rmask,
+    output [31:0] lsu_rdata,
     input lsu_wen,
+    input [31:0] lsu_waddr,
     input [31:0] lsu_wdata,
     input [3:0] lsu_wmask,
-    output reg lsu_respValid,
-    output [31:0] lsu_rdata
+    output reg lsu_respValid
 );
+    // C++提供的内存访问接口
+    import "DPI-C" function int pmem_read(input int raddr); // 内存读逻辑
+    import "DPI-C" function void pmem_write(
+        input int waddr, 
+        input int wdata, 
+        input byte wmask
+    ); // 内存写逻辑
     // 处理if
     always @(posedge clk) begin
-        if (if_reqValid) begin
-            // TODO: 完成访存
-            if_respValid <= 1;
+        if (ifu_reqValid) begin
+            ifu_rdata <= pmem_read(ifu_raddr);
+            ifu_respValid <= 1;
         end
     end
     // 处理lsu
+    reg [31:0] tmp;
     always @(posedge clk) begin
-        // TODO: 在这里无脑完成读取逻辑
+        // 读直达
+        tmp = (lsu_reqValid && ~lsu_wen) ? pmem_read(lsu_raddr) : 0;
+        case (lsu_rmask)
+        `MEMR_MASK_LBU: begin
+            lsu_rdata <= {{24{1'b0}}, tmp[7:0]};
+        end
+        `MEMR_MASK_LW: lsu_rdata <= tmp;
+        default:;
+        // 写相关
+        endcase
         if (lsu_reqValid) begin
             if (lsu_wen) begin
-                // TODO: 在这里完成写入
+                pmem_write(lsu_waddr, lsu_wdata, {{4{1'b0}}, lsu_wmask});
             end
         end
         lsu_respValid <= 1;

@@ -16,15 +16,15 @@ extern "C" {
 
 
     // DPI IMPORTS
-    // DPI import at vsrc/top.v:21:34
+    // DPI import at vsrc/npc.v:53:34
     extern void ifu_status_at_idle();
-    // DPI import at vsrc/top.v:23:34
+    // DPI import at vsrc/npc.v:55:34
     extern void ifu_status_at_wait();
-    // DPI import at vsrc/top.v:25:34
+    // DPI import at vsrc/npc.v:57:34
     extern void ifu_status_at_wait_load();
-    // DPI import at vsrc/top.v:14:33
+    // DPI import at vsrc/simple_bus.v:39:33
     extern int pmem_read(int raddr);
-    // DPI import at vsrc/top.v:15:34
+    // DPI import at vsrc/simple_bus.v:40:34
     extern void pmem_write(int waddr, int wdata, char wmask);
 
 #ifdef __cplusplus
