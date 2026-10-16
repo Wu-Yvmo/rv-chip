@@ -8,7 +8,7 @@ module npc(
     input clk,
     input rst,
     output meet_ebreak,
-    output reg is_load_export,
+    output reg is_load_store_export,
     // 下面信号为simple bus相关
     // ifu相关信号
     output ifu_reqValid,
@@ -58,6 +58,15 @@ module npc(
 
     // ifu状态机变量
     reg [1:0] ifu_status;
+    // 尝试思考重新设计ifu-status
+    // idle ifu-request 为1
+    // idle的作用是发送取指令的总线请求给总线
+    // wait-if ifu-request 为0
+    // wait-if的作用是等待取指令到位
+    // wait的作用是完成指令执行 如果没有load store 就回到idle
+    // 否则发送load store请求后进入wait-load-store
+    // wait lsu-request为1
+    // wait-load-store lsu-valid为1
     // ifu状态转移逻辑
     always @(posedge clk) begin
         if (rst) begin 
@@ -65,20 +74,27 @@ module npc(
             ifu_status_at_idle();
         end
         else begin
-            // 需要找个办法把任务完成这件事给转发出去
-            if (ifu_status == `IFU_STATUS_IDLE && ifu_respValid) begin
-                ifu_status <= `IFU_STATUS_WAIT;
-                ifu_status_at_wait();
+            if (ifu_status == `IFU_STATUS_IDLE) begin
+                ifu_status <= `IFU_STATUS_WAIT_IF;
             end
-            // 我们要尝试重新写一下跳转的逻辑
+            else if (ifu_status == `IFU_STATUS_WAIT_IF) begin
+                if (ifu_respValid) begin
+                    ifu_status <= `IFU_STATUS_WAIT;
+                    ifu_status_at_wait();
+                end
+            end
             else if (ifu_status == `IFU_STATUS_WAIT) begin
                 // is_load需要从control出来
                 if (is_load) begin
-                    ifu_status <= `IFU_STATUS_WAIT_LOAD;
+                    ifu_status <= `IFU_STATUS_WAIT_LOAD_STORE;
                     ifu_status_at_wait_load();
                 end
                 // 这里如果后面write也有延迟 就需要引入处理手段
-                else begin 
+                else if (is_store) begin 
+                    ifu_status <= `IFU_STATUS_WAIT_LOAD_STORE;
+                    ifu_status_at_wait_load();
+                end
+                else begin
                     ifu_status <= `IFU_STATUS_IDLE;
                     ifu_status_at_idle();
                 end
@@ -105,7 +121,7 @@ module npc(
         // 3.ifu是wait_load
         // 条件2和条件3是或的关系
         // 才更新
-        else if (~inner_meet_ebreak & ((ifu_status == `IFU_STATUS_WAIT && ~is_load) | (ifu_status == `IFU_STATUS_WAIT_LOAD))) pc <= next_pc;
+        else if (~inner_meet_ebreak & ((ifu_status == `IFU_STATUS_WAIT && (~is_load & ~is_store)) | (ifu_status == `IFU_STATUS_WAIT_LOAD_STORE & lsu_respValid))) pc <= next_pc;
         else pc <= pc;
     end
 
@@ -139,7 +155,10 @@ module npc(
         // 没遇到ebreak
         // 为wait且不是load 或 为wait load
         // 才允许写
-        .wen (reg_wen & ~meet_ebreak & ((ifu_status == `IFU_STATUS_WAIT && ~is_load) | (ifu_status == `IFU_STATUS_WAIT_LOAD))),
+        .wen (reg_wen
+            & ~meet_ebreak
+            & ((ifu_status == `IFU_STATUS_WAIT && (~is_load & ~is_store)) | (ifu_status == `IFU_STATUS_WAIT_LOAD_STORE))
+        ),
         .waddr (reg_waddr),
         .wdata (reg_wdata),
         .raddr_rs1 (rs1_addr),
@@ -160,7 +179,7 @@ module npc(
     wire [1:0] wb_type;
     reg is_load;
     reg is_store;
-    assign is_load_export = is_load;
+    assign is_load_store_export = is_load | is_store;
     control control(
         .instruction (instruction),
         .imm_ext_type (imm_ext_type),

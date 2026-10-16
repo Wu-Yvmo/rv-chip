@@ -2,7 +2,8 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 VSRC = ./vsrc/defines.v ./vsrc/alu.v ./vsrc/control.v \
 	./vsrc/immgen.v ./vsrc/regfile.v ./vsrc/top.v \
-	./vsrc/ifu.v ./vsrc/lsu.v ./vsrc/npc.v ./vsrc/simple_bus.v
+	./vsrc/ifu.v ./vsrc/lsu.v ./vsrc/npc.v \
+	./vsrc/simple_bus.v
 
 CPPSRC = ./csrc/read_file.cpp ./csrc/emu.cpp ./csrc/pmem.cpp ./csrc/main.cpp
 CPPSRC_NVBOARD = build/auto_bind.cpp ./csrc/emu.cpp ./csrc/main.cpp

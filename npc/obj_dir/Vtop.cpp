@@ -14,8 +14,7 @@ Vtop::Vtop(VerilatedContext* _vcontextp__, const char* _vcname__)
     , clk{vlSymsp->TOP.clk}
     , rst{vlSymsp->TOP.rst}
     , meet_ebreak{vlSymsp->TOP.meet_ebreak}
-    , is_load_export{vlSymsp->TOP.is_load_export}
-    , __pinNumber5{vlSymsp->TOP.__pinNumber5}
+    , is_load_store_export{vlSymsp->TOP.is_load_store_export}
     , rootp{&(vlSymsp->TOP)}
 {
     // Register model with the context
@@ -223,6 +222,6 @@ VL_ATTR_COLD void Vtop::traceBaseModel(VerilatedTraceBaseC* tfp, int levels, int
             " use --trace-fst with VerilatedFst object, and --trace-vcd with VerilatedVcd object");
     }
     stfp->spTrace()->addModel(this);
-    stfp->spTrace()->addInitCb(&trace_init, &(vlSymsp->TOP), name(), false, 69);
+    stfp->spTrace()->addInitCb(&trace_init, &(vlSymsp->TOP), name(), false, 75);
     Vtop___024root__trace_register(&(vlSymsp->TOP), stfp->spTrace());
 }

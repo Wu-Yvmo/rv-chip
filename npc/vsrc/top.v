@@ -2,7 +2,7 @@ module top(
     input clk,
     input rst,
     output meet_ebreak,
-    output is_load_export,
+    output is_load_store_export
 );
     // 实例化npc
     // wire meet_ebreak;
@@ -27,7 +27,7 @@ module top(
         .clk (clk),
         .rst (rst),
         .meet_ebreak (meet_ebreak),
-        .is_load_export (is_load_export),
+        .is_load_store_export (is_load_store_export),
         // ifu相关信号
         .ifu_reqValid (ifu_reqValid),
         .ifu_raddr (ifu_raddr),

@@ -87,9 +87,10 @@ void Vtop___024root__trace_chg_0_sub_0(Vtop___024root* vlSelf, VerilatedVcd::Buf
                                [(0x0000007fU & vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata)])));
         bufp->chgBit(oldp+26,((1U & Vtop__ConstPool__CONST_3
                                [(0x0000007fU & vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata)])));
-        bufp->chgCData(oldp+27,(vlSelfRef.top__DOT__npc__DOT__control__DOT__wb_type),2);
-        bufp->chgIData(oldp+28,(vlSelfRef.top__DOT__npc__DOT__immgen__DOT__imm),32);
-        bufp->chgIData(oldp+29,(((1U & Vtop__ConstPool__CONST_1
+        bufp->chgBit(oldp+27,(vlSelfRef.top__DOT__npc__DOT__control__DOT__mem_ren));
+        bufp->chgCData(oldp+28,(vlSelfRef.top__DOT__npc__DOT__control__DOT__wb_type),2);
+        bufp->chgIData(oldp+29,(vlSelfRef.top__DOT__npc__DOT__immgen__DOT__imm),32);
+        bufp->chgIData(oldp+30,(((1U & Vtop__ConstPool__CONST_1
                                   [(0x0000007fU & vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata)])
                                   ? vlSelfRef.top__DOT__npc__DOT__pc
                                   : ((0U == (0x0000001fU 
@@ -99,23 +100,25 @@ void Vtop___024root__trace_chg_0_sub_0(Vtop___024root* vlSelf, VerilatedVcd::Buf
                                      [(0x0000001fU 
                                        & (vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata 
                                           >> 0x0000000fU))]))),32);
-        bufp->chgIData(oldp+30,(((1U & Vtop__ConstPool__CONST_2
+        bufp->chgIData(oldp+31,(((1U & Vtop__ConstPool__CONST_2
                                   [(0x0000007fU & vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata)])
                                   ? vlSelfRef.top__DOT__npc__DOT__regfile__DOT__rdata_rs2
                                   : vlSelfRef.top__DOT__npc__DOT__immgen__DOT__imm)),32);
-        Vtop___024root__trace_chg_dtype____0(vlSelf, bufp, 31, vlSelfRef.top__DOT__npc__DOT__regfile__DOT__storage);
-        bufp->chgIData(oldp+63,(vlSelfRef.top__DOT__npc__DOT__regfile__DOT__i),32);
-        bufp->chgIData(oldp+64,(vlSelfRef.top__DOT__simple_bus__DOT__tmp),32);
+        Vtop___024root__trace_chg_dtype____0(vlSelf, bufp, 32, vlSelfRef.top__DOT__npc__DOT__regfile__DOT__storage);
+        bufp->chgIData(oldp+64,(vlSelfRef.top__DOT__npc__DOT__regfile__DOT__i),32);
+        bufp->chgIData(oldp+65,(vlSelfRef.top__DOT__simple_bus__DOT__ifu_time_elapse_ctr),32);
+        bufp->chgBit(oldp+66,(vlSelfRef.top__DOT__simple_bus__DOT__ifu_started));
+        bufp->chgIData(oldp+67,(vlSelfRef.top__DOT__simple_bus__DOT__tmp),32);
     }
-    bufp->chgBit(oldp+65,(vlSelfRef.clk));
-    bufp->chgBit(oldp+66,(vlSelfRef.rst));
-    bufp->chgBit(oldp+67,(vlSelfRef.is_load_export));
-    bufp->chgBit(oldp+68,((Vtop__ConstPool__CONST_6
+    bufp->chgBit(oldp+68,(vlSelfRef.clk));
+    bufp->chgBit(oldp+69,(vlSelfRef.rst));
+    bufp->chgBit(oldp+70,(vlSelfRef.is_load_store_export));
+    bufp->chgBit(oldp+71,((Vtop__ConstPool__CONST_6
                            [(0x0000007fU & vlSelfRef.top__DOT__simple_bus__DOT__ifu_rdata)] 
                            & ((~ (IData)(vlSelfRef.top__DOT__npc__DOT__meet_ebreak_r)) 
-                              & ((2U == (IData)(vlSelfRef.top__DOT__npc__DOT__ifu_status)) 
-                                 | ((~ (IData)(vlSelfRef.is_load_export)) 
-                                    & (1U == (IData)(vlSelfRef.top__DOT__npc__DOT__ifu_status))))))));
+                              & ((3U == (IData)(vlSelfRef.top__DOT__npc__DOT__ifu_status)) 
+                                 | ((~ (IData)(vlSelfRef.is_load_store_export)) 
+                                    & (2U == (IData)(vlSelfRef.top__DOT__npc__DOT__ifu_status))))))));
 }
 
 void Vtop___024root__trace_chg_dtype____0(Vtop___024root* vlSelf, VerilatedVcd::Buffer* bufp, uint32_t offset, const VlUnpacked<IData/*31:0*/, 32>& __VdtypeVar) {

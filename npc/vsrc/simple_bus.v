@@ -42,18 +42,38 @@ module simple_bus(
         input int wdata, 
         input byte wmask
     ); // 内存写逻辑
-    integer time_elapse = 5;
+    localparam TIME_ELAPSE = 5;
+    integer ifu_time_elapse_ctr = TIME_ELAPSE;
+    integer lsu_time_elapse_ctr = TIME_ELAPSE;
+    reg ifu_started = 0;
+    reg lsu_started = 0;
+
     // 处理if
     // 思考一下怎么实现延时
     // 首先需要让reqvalid只在idle周期有效
+    // 怀疑已经陷入死循环了 尝试诊断一下哪里的问题
+    // idle跳转到wait的条件就是ifu回复 reqvalid 所以这里应该不行?
+    // 问题就在这里出现
     always @(posedge clk) begin
-        if (ifu_reqValid) begin
-            // if (time_elapse == 0) begin
-            // end
+        if (ifu_reqValid && ~ifu_started) begin
+            ifu_time_elapse_ctr <= TIME_ELAPSE;
+            ifu_started <= 1;
+        end
+        else if (ifu_time_elapse_ctr == 0) begin
             ifu_rdata <= pmem_read(ifu_raddr);
             ifu_respValid <= 1;
+            ifu_started <= 0;
         end
+        else if (ifu_started) 
+            ifu_time_elapse_ctr <= ifu_time_elapse_ctr - 1;
     end
+
+    // 只让ifu_respValid持续1周期
+    // 没什么用
+    always @(posedge clk) begin
+        if (ifu_respValid) ifu_respValid <= 0;
+    end
+
     // 处理lsu
     reg [31:0] tmp;
     always @(posedge clk) begin

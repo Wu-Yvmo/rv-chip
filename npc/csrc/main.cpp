@@ -109,6 +109,8 @@ extern uint64_t cycle_count;
 extern int ifu_status;
 extern size_t emu_instruction_executed;
 
+uint32_t last_rtl_pc;
+
 int main(int argc, char **argv) {
 	parse_args(argc, argv);
 	if (image_path) {
@@ -134,6 +136,7 @@ int main(int argc, char **argv) {
 	vtop->rst = 0;
 	vtop->eval();
 	
+	last_rtl_pc = vtop->rootp->top__DOT__npc__DOT__pc;
 	// 正式指令执行部分
 	// 执行测试直到两边都遇到ebreak
 	// 只有一边时需要报错
@@ -142,24 +145,19 @@ int main(int argc, char **argv) {
 	for (size_t i = 0; i < SIZE_MAX; i += 1) {
 		cycle_count = i;
 		// 1. emu执行一条指令后收集状态
+		// 尝试换一个逻辑
 		// 2. rtl执行一条指令后收集状态
 		vtop->clk = 1;
 		vtop->eval();
 		vtop->clk = 0;
 		vtop->eval();
 		// 每次都应该在指令完成提交时执行
-		if ((ifu_status == IFU_STATUS_WAIT && !vtop->is_load_export) || (ifu_status == IFU_STATUS_WAIT_LOAD && vtop->is_load_export)) {
-			single_cycle();
+		if ((ifu_status == IFU_STATUS_WAIT && !vtop->is_load_store_export) || (ifu_status == IFU_STATUS_WAIT_LOAD && vtop->is_load_store_export)) {
+			single_cycle(); // 这么看来的话确实是领先一条指令了
 		}
 		gather_emu_comparable_runtime_statuses();
 		gather_rtl_comparable_runtime_statuses(vtop);
 		// 打印两个
-		// auto emu_dump = dump_comparable_runtime_statuses(emu_comparable_runtime_statuses);
-		// auto rtl_dump = dump_comparable_runtime_statuses(rtl_comparable_runtime_statuses);
-		// std::cout << "emu:" << std::endl;
-		// std::cout << emu_dump << std::endl;
-		// std::cout << "rtl:" << std::endl;
-		// std::cout << rtl_dump << std::endl;
 		// 比较emu和rtl的运行状态
 		// 只在idle状态下检查
 		if (ifu_status == IFU_STATUS_IDLE) {
